@@ -23,17 +23,28 @@ class App(QWidget):
         if event.key() == QtCore.Qt.Key_Q:
             self.deleteLater()
         elif event.key() == QtCore.Qt.Key_N:
-            img = self.get_next_img()
-            if img is not None:
-                self.load_pix_from_buff(img)
-                self.annotator.save_current()
-            else:
-                self.annotator.save_all()
+            if self.vido_loader is not None:
+                img = self.get_next_img()
+                if img is not None:
+                    self.load_pix_from_buff(img)
+                    self.annotator.save_current()
+                else:
+                    self.annotator.save_all()
+                    self.reset_video()
 
         event.accept()
 
+    def reset_video(self):
+        self.load_pix_from_buff(np.zeros((720, 1280, 3), dtype=np.uint8))
+        self.pbar.setValue(0)
+        self.vido_loader = None
+
+
     def get_next_img(self):
         img = self.vido_loader.get_next_img()
+        if img is None:
+            return None
+        self.pbar.setValue(self.annotator.current_frame / self.annotator.total_frames * 100)
         self.annotator.current_frame += 1
         return img
 
@@ -116,13 +127,16 @@ class App(QWidget):
         self.instrLabel.setText("Istruzioni:\n "
                                 "1: premere 'carica video'\n"
                                 "per aprire un video ed aspettare\n"
-                                "che venga caricato il primo frame")
+                                "che venga caricato il primo frame\n"
+                                "2: Se ci sono oggetti presenti\n"
+                                " annotarli cliccando con il mouse\n"
+                                "3: premere il tasto 'N' per andare al\n"
+                                "frame successivo")
 
         # image label
         self.label = QLabel()
         self.label.setMaximumSize(1280, 720)
         self.label.setMinimumSize(1280, 720)
-        self.load_pix_from_buff(np.zeros((720, 1280, 3), dtype=np.uint8))
         self.label.mousePressEvent = self.getPos
 
         # video annotation progress bar
@@ -131,7 +145,6 @@ class App(QWidget):
         self.pbar.setRange(0, 100)
         self.pbar.setMinimumSize(500, 10)
         self.pbar.setMaximumWidth(1280)
-        self.pbar.setValue(0)
 
         # layouts to put all together
         self.l_vlay0 = QVBoxLayout(self)
@@ -151,6 +164,8 @@ class App(QWidget):
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.setMaximumSize(1600, 800)
         self.setMinimumSize(1600, 800)
+
+        self.reset_video()
         self.show()
 
 

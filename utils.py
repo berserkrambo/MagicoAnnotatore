@@ -86,9 +86,9 @@ class VideoLoader(threading.Thread):
         self.get_next_batch()
 
     def get_next_img(self):
-        if self.current_batch_frame == len(self.batch_imgs) - 1:
+        if self.current_batch_frame >= len(self.batch_imgs) - 1:
             self.get_next_batch()
-            if not self.batch_loaded:
+            if not self.batch_loaded or self.frame_loaded >= self.tot_frames - 1:
                 return None
         img = self.batch_imgs[self.current_batch_frame]
         self.current_batch_frame += 1
