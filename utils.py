@@ -19,16 +19,23 @@ class ClickPos:
 
 
 class Annotator:
-    def __init__(self, tot_frames, file_name):
+    def __init__(self, tot_frames, file_name, scale):
         self.file_name = file_name
         self.file = open(file_name, 'w')
+        self.file.write("frame_id\tx1\ty1\tx2\ty2\tclasse\n")
         self.total_frames = tot_frames
         self.current_frame = 0
-        self.frame_objs = {}  # chiave: tupla (frane_number, x,y), valore: classe
-        self.objs = []
+        self.frame_objs = {}  # chiave: tupla (frane_number, x1,y1,x2,y2), valore: classe
+        self.objs = {}
+        self.scale_factor = scale
 
     def update_obj(self, pos, val):
-        self.frame_objs[pos] = val
+        x1 = pos[1] / self.scale_factor
+        y1 = pos[2] / self.scale_factor
+        x2 = pos[3] / self.scale_factor
+        y2 = pos[4] / self.scale_factor
+        new_pos = (pos[0], x1, y1, x2, y2)
+        self.frame_objs[new_pos] = val
 
     def remove_obj(self, pos):
         if pos in self.frame_objs:
@@ -37,23 +44,20 @@ class Annotator:
     def reset(self):
         self.file = open(self.file_name, 'w')
         self.current_frame = 0
-        self.frame_objs = {}  # chiave: tupla (frane_number, x,y), valore: classe
-        self.objs = []
+        self.frame_objs = {}  # chiave: tupla (frane_number, x1,y1,x2,y2), valore: classe
+        self.objs = {}
 
     def save_current(self):
-        for obj in self.frame_objs:
-            self.objs.append(obj)
+        for key, value in self.frame_objs.items():
+            self.objs[key] = value
         self.frame_objs = {}
 
     def save_all(self):
         self.save_current()
-        for obj in self.objs:
-            self.file.write(obj)
-            self.file.write('\n')
-        self.objs = []
-
-    def __del__(self):
-        self.save_all()
+        for obj, val in self.objs.items():
+            self.file.write(f"{obj[0]}\t{obj[1]}\t{obj[2]}\t{obj[3]}\t{obj[4]}\t{val}\n")
+            self.file.write("{val}\n")
+        self.objs = {}
         self.file.close()
 
 

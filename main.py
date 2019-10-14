@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog, QLabel, QProgressBar, QVBoxLayout, \
-    QHBoxLayout, QLabel
+    QHBoxLayout, QLabel, QGroupBox, QRadioButton
 from PyQt5 import QtCore, uic
 from PyQt5.QtGui import QIcon, QPixmap, QImage
 import threading
@@ -16,11 +16,16 @@ class App(QWidget):
         # super(threading.Thread, self).__init__()
         super(QWidget, self).__init__()
         self.vido_loader = None
+        self.n_classes = 6
+        self.colors = {}
+        self.colors_bg = {}
         self.initPosClick()
         self.initUI()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Q:
+            if self.vido_loader is not None:
+                self.annotator.save_all()
             self.deleteLater()
         elif event.key() == QtCore.Qt.Key_N:
             if self.vido_loader is not None:
@@ -28,7 +33,9 @@ class App(QWidget):
                 if img is not None:
                     self.load_pix_from_buff(img)
                     self.annotator.save_current()
+                    self.annotator.current_frame += 1
                 else:
+                    print("saving....")
                     self.annotator.save_all()
                     self.reset_video()
 
@@ -38,7 +45,7 @@ class App(QWidget):
         self.load_pix_from_buff(np.zeros((720, 1280, 3), dtype=np.uint8))
         self.pbar.setValue(0)
         self.vido_loader = None
-
+        self.setCLassGroupVisibility(False)
 
     def get_next_img(self):
         img = self.vido_loader.get_next_img()
@@ -73,10 +80,11 @@ class App(QWidget):
                                                     "MP4 video files (*.mp4);;AVI video files (*.avi)", options=options)
         if video_file is not "":
             self.vido_loader = VideoLoader(video_file)
-            self.annotator = Annotator(self.vido_loader.tot_frames, video_file.replace(".avi", ".txt").replace(".mp4", ".txt"))
+            self.annotator = Annotator(self.vido_loader.tot_frames, video_file.replace(".avi", ".txt").replace(".mp4", ".txt"), self.vido_loader.scale_factor)
             while not self.vido_loader.batch_loaded:
                 time.sleep(0.5)
             self.load_pix_from_buff(self.get_next_img())
+            self.setCLassGroupVisibility(True)
 
     def initPosClick(self):
         self.x1 = 0
@@ -84,6 +92,11 @@ class App(QWidget):
         self.x2 = 0
         self.y2 = 0
         self.click = 0
+
+    def getCheckedClass(self):
+        for n, r in enumerate(self.radioclass_List):
+            if r.isChecked():
+                return n
 
     def getPos(self, event):
         if self.vido_loader is None:
@@ -101,8 +114,15 @@ class App(QWidget):
             self.x1, self.x2 = min(self.x1, self.x2), max(self.x1, self.x2)
             self.y1, self.y2 = min(self.y1, self.y2), max(self.y1, self.y2)
 
+            self.annotator.update_obj((self.annotator.current_frame, self.x1, self.y1, self.x2, self.y2), self.getCheckedClass())
             print(f"frame {self.annotator.current_frame}, pos {self.x1},{self.y1} : {self.x2},{self.y2}")
 
+    def setCLassGroupVisibility(self, val=False):
+        self.class_group_label.setVisible(val)
+        self.class_group_label.update()
+        for rdi in self.radioclass_List:
+            rdi.setVisible(val)
+            rdi.update()
 
     def initUI(self):
         self.title = 'Magico Annotatore Ferroviario'
@@ -146,6 +166,12 @@ class App(QWidget):
         self.pbar.setMinimumSize(500, 10)
         self.pbar.setMaximumWidth(1280)
 
+        # classes
+        self.radioclass_List = []
+        for rdi in range(self.n_classes):
+            self.radioclass_List.append(QRadioButton(f"Classe {rdi}"))
+        self.radioclass_List[0].setChecked(True)
+
         # layouts to put all together
         self.l_vlay0 = QVBoxLayout(self)
         self.r_vlay0 = QVBoxLayout(self)
@@ -153,11 +179,16 @@ class App(QWidget):
         self.l_vlay0.addWidget(self.pbar)
         self.r_vlay0.addWidget(self.instrLabel)
         self.r_vlay0.addWidget(self.loadButton)
+        self.r_vlay0.addSpacing(30)
+        self.class_group_label = QLabel("Classi:")
+        self.r_vlay0.addWidget(self.class_group_label)
+        for rdi in self.radioclass_List:
+            self.r_vlay0.addWidget(rdi)
+        self.setCLassGroupVisibility(False)
+
         self.r_vlay0.setAlignment(QtCore.Qt.AlignTop)
 
         self.hlay0.addLayout(self.l_vlay0)
-        self.r_vlay1 = QVBoxLayout()
-
         self.hlay0.addLayout(self.r_vlay0)
 
         self.setWindowTitle(self.title)
