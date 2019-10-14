@@ -13,5 +13,5 @@ with open("colors_hsl.yaml", 'w') as f:
 
     for k1, v1 in cc.items():
         h,s,l = k1
-        f.write(f"{v1}: {k1}\n")
+        f.write(f"{v1}: {k1[0]},{k1[1]},{k1[2]}\n")
 

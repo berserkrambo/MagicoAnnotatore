@@ -2,13 +2,13 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog, QLabel, QProgressBar, QVBoxLayout, \
     QHBoxLayout, QLabel, QGroupBox, QRadioButton
 from PyQt5 import QtCore, uic
-from PyQt5.QtGui import QIcon, QPixmap, QImage
+from PyQt5.QtGui import QIcon, QPixmap, QImage, QPainter, QPen, QColor
 import threading
 import cv2
 import time
 import numpy as np
 
-from utils import VideoLoader, Annotator
+from utils import VideoLoader, Annotator, readColors, hls2rgb
 
 
 class App(QWidget):
@@ -17,8 +17,7 @@ class App(QWidget):
         super(QWidget, self).__init__()
         self.vido_loader = None
         self.n_classes = 6
-        self.colors = {}
-        self.colors_bg = {}
+        self.colors_class_dict = readColors()
         self.initPosClick()
         self.initUI()
 
@@ -62,7 +61,8 @@ class App(QWidget):
         height, width, channel = img.shape
         bytesPerLine = channel * width
         qImg = QImage(img.data, width, height, bytesPerLine, QImage.Format_RGB888)
-        self.label.setPixmap(QPixmap.fromImage(qImg))
+        self.pixmap_image = QPixmap.fromImage(qImg)
+        self.label.setPixmap(self.pixmap_image)
         self.label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.label.update()
 
@@ -70,7 +70,8 @@ class App(QWidget):
         height, width, channel = img.shape
         bytesPerLine = channel * width
         qImg = QImage(img.data, width, height, bytesPerLine, QImage.Format_RGB888)
-        self.label.setPixmap(QPixmap.fromImage(qImg))
+        self.pixmap_image = QPixmap.fromImage(qImg)
+        self.label.setPixmap(self.pixmap_image)
         self.label.update()
 
     def openFileNameDialog(self):
@@ -116,6 +117,23 @@ class App(QWidget):
 
             self.annotator.update_obj((self.annotator.current_frame, self.x1, self.y1, self.x2, self.y2), self.getCheckedClass())
             print(f"frame {self.annotator.current_frame}, pos {self.x1},{self.y1} : {self.x2},{self.y2}")
+
+            # create painter instance with pixmap
+            painterInstance = QPainter(self.pixmap_image)
+
+            # set rectangle color and thickness
+            r,g,b = hls2rgb(self.colors_class_dict[self.getCheckedClass()])
+            penRectangle = QPen(QColor(r,g,b))
+            penRectangle.setWidth(3)
+
+            # draw rectangle on painter
+            painterInstance.setPen(penRectangle)
+            painterInstance.drawRect(self.x1, self.y1, self.x2-self.x1, self.y2-self.y1)
+
+            # set pixmap onto the label widget
+            self.label.setPixmap(self.pixmap_image)
+            self.label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+            self.label.update()
 
     def setCLassGroupVisibility(self, val=False):
         self.class_group_label.setVisible(val)

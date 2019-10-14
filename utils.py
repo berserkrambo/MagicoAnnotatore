@@ -1,7 +1,49 @@
 import threading
 import cv2
 import time
+from path import Path
+import yaml
 
+def readColors():
+    color_class_dict = {}
+    if not Path("colors_hsl.yaml").exists():
+        raise FileNotFoundError("Unable to find colors_hsl.yaml, please run color_generator.py")
+    with open("colors_hsl.yaml") as f:
+        yml = yaml.load(f, yaml.Loader)
+        for k,v in yml.items():
+            v = tuple([int(v1) for v1 in v.split(',')])
+            color_class_dict[k] = tuple(v)
+    return color_class_dict
+
+def hls2rgb(hsl):
+    h, s ,l = hsl
+    s /= 100
+    l /= 100
+    c = (1 - abs(2 * l - 1)) * s
+    k = h / 60
+    x = c * (1 - abs(k % 2 - 1))
+    r1 = g1 = b1 = 0
+    if (k >= 0 and k <= 1):
+        r1=c
+        g1=x
+    if (k > 1 and k <= 2):
+        r1=x
+        g1=c
+    if (k > 2 and k <= 3):
+        g1=c
+        b1=x
+    if (k > 3 and k <= 4):
+        g1=x
+        b1=c
+    if (k > 4 and k <= 5):
+        r1=x
+        b1=c
+    if (k > 5 and k <= 6):
+        r1=c
+        b1=x
+    m = l - c / 2
+
+    return (int((r1 + m)*255), int((g1 + m)*255), int((b1 + m)*255))
 
 class ClickPos:
     def __init__(self):
