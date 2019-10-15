@@ -8,7 +8,7 @@ import cv2
 import time
 import numpy as np
 
-from utils import VideoLoader, Annotator, readColors, hls2rgb
+from utils import VideoLoader, Annotator, readColors, hls2rgb, re_scale_coords
 
 
 class App(QWidget):
@@ -106,7 +106,7 @@ class App(QWidget):
             self.vido_loader = VideoLoader(video_file)
             self.annotator = Annotator(self.vido_loader.tot_frames,
                                        video_file.replace(".avi", ".txt").replace(".mp4", ".txt"),
-                                       self.vido_loader.scale_factor)
+                                       self.vido_loader.meta)
             while not self.vido_loader.batch_loaded:
                 time.sleep(0.5)
             self.current_img = self.get_next_img()
@@ -141,7 +141,8 @@ class App(QWidget):
 
             # draw rectangle on painter
             painterInstance.setPen(penRectangle)
-            x1, y1, x2, y2 = k[1] * self.annotator.scale_factor, k[2] * self.annotator.scale_factor, k[3] * self.annotator.scale_factor, k[4] * self.annotator.scale_factor
+            # x1, y1, x2, y2 = k[1] * self.annotator.scale_factor, k[2] * self.annotator.scale_factor, k[3] * self.annotator.scale_factor, k[4] * self.annotator.scale_factor
+            x1, y1, x2, y2 = re_scale_coords(list(k[1:5]), self.vido_loader.meta)
             painterInstance.drawRect(x1, y1, x2 - x1, y2 - y1)
 
             # set pixmap onto the label widget
@@ -166,7 +167,7 @@ class App(QWidget):
             self.x1, self.x2 = min(self.x1, self.x2), max(self.x1, self.x2)
             self.y1, self.y2 = min(self.y1, self.y2), max(self.y1, self.y2)
 
-            self.annotator.update_obj((self.annotator.current_frame, self.x1, self.y1, self.x2, self.y2),
+            self.annotator.update_obj([self.annotator.current_frame, self.x1, self.y1, self.x2, self.y2],
                                       self.getCheckedClass())
             print(f"frame {self.annotator.current_frame}, pos {self.x1},{self.y1} : {self.x2},{self.y2}")
 
@@ -175,8 +176,10 @@ class App(QWidget):
     def setCLassGroupVisibility(self, val=False):
         self.class_group_label.setVisible(val)
         self.class_group_label.update()
-        for rdi in self.radioclass_List:
+        for rdi_i, rdi in enumerate(self.radioclass_List):
             rdi.setVisible(val)
+            r,g,b = hls2rgb(self.colors_class_dict[rdi_i])
+            rdi.setStyleSheet(f'color: {QColor(r,g,b).name()}')
             rdi.update()
 
     def initUI(self):
