@@ -109,9 +109,11 @@ class App(QWidget):
                                        self.vido_loader.meta)
             while not self.vido_loader.batch_loaded:
                 time.sleep(0.5)
-            self.current_img = self.get_next_img()
-            self.load_pix_from_buff()
-            self.setCLassGroupVisibility(True)
+
+            while self.annotator.current_frame <= self.annotator.saved_frame:
+                self.current_img = self.get_next_img()
+                self.load_pix_from_buff()
+                self.setCLassGroupVisibility(True)
 
     def initPosClick(self):
         self.x1 = 0

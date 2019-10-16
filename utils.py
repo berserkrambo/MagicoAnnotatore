@@ -118,14 +118,29 @@ def hls2rgb(hsl):
 
 class Annotator:
     def __init__(self, tot_frames, file_name, meta):
-        self.file_name = file_name
-        self.file = open(file_name, 'w')
-        self.file.write("frame_id\tx1\ty1\tx2\ty2\tclasse\n")
         self.total_frames = tot_frames
         self.current_frame = 0
+        self.saved_frame = 0
         self.frame_objs = {}  # chiave: tupla (frane_number, x1,y1,x2,y2), valore: classe
         self.objs = {}
         self.meta = meta
+
+        self.file_name = Path(file_name)
+        if self.file_name.exists():
+            self.load_annotations()
+            self.file = open(file_name, 'a')
+        else:
+            self.file = open(file_name, 'w')
+            self.file.write("frame_id\tx1\ty1\tx2\ty2\tclasse\n")
+
+    def load_annotations(self):
+        self.file = open(self.file_name, 'r')
+        header = self.file.readline()
+        for line in self.file:
+            line = [int(l.replace('\n', '')) for l in line.split('\t')]
+            # self.objs[tuple(line[0:5])] = line[5]
+            self.saved_frame = line[0]
+        self.file.close()
 
     def update_obj(self, pos, val):
         x1, y1, x2, y2 = scale_coords(pos[1:5], self.meta)
@@ -151,7 +166,6 @@ class Annotator:
         self.save_current()
         for obj, val in self.objs.items():
             self.file.write(f"{obj[0]}\t{obj[1]}\t{obj[2]}\t{obj[3]}\t{obj[4]}\t{val}\n")
-            self.file.write("{val}\n")
         self.objs = {}
         self.file.close()
 
@@ -202,7 +216,7 @@ class VideoLoader(threading.Thread):
         ret, frame = self.reader.read()
         if ret:
             # frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
-            frame, self.meta = letterbox(frame, new_shape=[720,1280], mode='rect')
+            frame, self.meta = letterbox(frame, new_shape=[720, 1280], mode='rect')
             batch_frame_loaded += 1
             self.frame_loaded += 1
             self.batch_imgs.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
@@ -211,7 +225,7 @@ class VideoLoader(threading.Thread):
             ret, frame = self.reader.read()
             if ret:
                 # frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
-                frame, self.meta = letterbox(frame, new_shape=[720,1280], mode='rect')
+                frame, self.meta = letterbox(frame, new_shape=[720, 1280], mode='rect')
                 batch_frame_loaded += 1
                 self.frame_loaded += 1
                 self.batch_imgs.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
