@@ -216,7 +216,7 @@ class VideoLoader(threading.Thread):
         ret, frame = self.reader.read()
         if ret:
             # frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
-            frame, self.meta = letterbox(frame, new_shape=[720, 1280], mode='rect')
+            frame, self.meta = letterbox(frame, new_shape=[800, 1280], mode='rect')
             batch_frame_loaded += 1
             self.frame_loaded += 1
             self.batch_imgs.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
@@ -225,7 +225,7 @@ class VideoLoader(threading.Thread):
             ret, frame = self.reader.read()
             if ret:
                 # frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
-                frame, self.meta = letterbox(frame, new_shape=[720, 1280], mode='rect')
+                frame, self.meta = letterbox(frame, new_shape=[800, 1280], mode='rect')
                 batch_frame_loaded += 1
                 self.frame_loaded += 1
                 self.batch_imgs.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))

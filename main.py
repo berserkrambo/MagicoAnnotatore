@@ -63,7 +63,7 @@ class App(QWidget):
         event.accept()
 
     def reset_video(self):
-        self.current_img = np.zeros((720, 1280, 3), dtype=np.uint8)
+        self.current_img = np.zeros((800, 1280, 3), dtype=np.uint8)
         self.load_pix_from_buff()
         self.pbar.setValue(0)
         self.vido_loader = None
@@ -188,8 +188,8 @@ class App(QWidget):
         self.title = 'Magico Annotatore Ferroviario'
         self.left = 10
         self.top = 10
-        self.width = 1800
-        self.height = 850
+        self.width = 1600
+        self.height = 900
 
         self.hlay0 = QHBoxLayout(self)
 
@@ -220,8 +220,8 @@ class App(QWidget):
 
         # image label
         self.label = QLabel()
-        self.label.setMaximumSize(1280, 720)
-        self.label.setMinimumSize(1280, 720)
+        self.label.setMaximumSize(1280, 800)
+        self.label.setMinimumSize(1280, 800)
         self.label.mousePressEvent = self.getPos
 
         # video annotation progress bar
@@ -258,8 +258,8 @@ class App(QWidget):
 
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-        self.setMaximumSize(1600, 800)
-        self.setMinimumSize(1600, 800)
+        self.setMaximumSize(1600, 900)
+        self.setMinimumSize(1600, 900)
 
         self.reset_video()
         self.show()
