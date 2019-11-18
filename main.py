@@ -82,6 +82,7 @@ class App(QWidget):
         self.current_img = np.zeros((800, 1280, 3), dtype=np.uint8)
         self.load_pix_from_buff()
         self.pbar.setValue(0)
+        self.plabel.setText("Frame Annotati: 0 / 0")
         self.vido_loader = None
         self.setCLassGroupVisibility(False)
 
@@ -90,6 +91,7 @@ class App(QWidget):
         if img is None:
             return None
         self.pbar.setValue(self.annotator.current_frame / self.annotator.total_frames * 100)
+        self.plabel.setText(f"Frame Annotati: {self.annotator.current_frame} / {self.annotator.total_frames}")
         self.annotator.current_frame += 1
         return img
 
@@ -256,19 +258,23 @@ class App(QWidget):
         self.instrLabel.move(1350, 120)
         self.instrLabel.setStyleSheet('color: black')
         self.instrLabel.setStyleSheet("font: 12pt Comic Sans MS")
-        self.instrLabel.setText("Istruzioni:\n "
-                                "1: premere 'carica video'\n"
-                                "per aprire un video ed aspettare\n"
-                                "che venga caricato il primo frame\n"
-                                "2: Se ci sono oggetti presenti\n"
-                                " annotarli cliccando con il mouse\n"
-                                "frame successivo\n\n"
-                                "Funzionalità:\n"
-                                "'n' avanti di un frame\n"
-                                "'\\' scorre le annotazioni\n"
-                                "'x' elimina l'annotazione\n"
-                                "'Esc' deseleziona l'annotazione\n"
+        self.instrLabel.setText("<b>Istruzioni:</b><br>"
+                                "1: premere 'carica video'<br>"
+                                "per aprire un video ed aspettare<br>"
+                                "che venga caricato il primo frame<br>"
+                                "2: Se ci sono oggetti presenti<br>"
+                                " annotarli cliccando con il mouse<br>"
+                                "frame successivo<br><br>"
+                                "<b>Funzionalità:</b><br>"
+                                "'n' avanti di un frame<br>"
+                                "'\\' scorre le annotazioni<br>"
+                                "'x' elimina l'annotazione<br>"
+                                "'Esc' deseleziona l'annotazione<br>"
                                 "'q' salva ed esce")
+        self.plabel = QLabel()
+        self.plabel.setText("Frame Annotati: 0 / 0")
+        self.plabel.setStyleSheet("font: 10pt Comic Sans MS")
+        self.plabel.setMaximumSize(200,12)
 
         # image label
         self.label = QLabel()
@@ -312,7 +318,7 @@ class App(QWidget):
 
         self.l_vlay0.addWidget(self.label)
         self.l_vlay0.addWidget(self.pbar)
-
+        self.l_vlay0.addWidget(self.plabel)
 
         self.class_group_label = QLabel("Classi:")
         self.r_vlay0.addWidget(self.class_group_label)
