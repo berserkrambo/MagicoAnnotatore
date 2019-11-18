@@ -84,6 +84,14 @@ def readColors():
             color_class_dict[k] = tuple(v)
     return color_class_dict
 
+def readClasses():
+    classes = []
+    if not Path("classi.txt").exists():
+        raise FileNotFoundError("Unable to find classi.txt")
+    with open("classi.txt") as f:
+        classes = f.readlines()
+    classes = [i.strip() for i in classes]
+    return classes
 
 def hls2rgb(hsl):
     h, s, l = hsl

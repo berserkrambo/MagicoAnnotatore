@@ -8,7 +8,7 @@ import cv2
 import time
 import numpy as np
 
-from utils import VideoLoader, Annotator, readColors, hls2rgb, re_scale_coords
+from utils import VideoLoader, Annotator, readColors, readClasses, hls2rgb, re_scale_coords
 
 
 class App(QWidget):
@@ -18,49 +18,65 @@ class App(QWidget):
         self.vido_loader = None
         self.bbox_selected = None
         self.current_img = None
-        self.n_classes = 6
+        self.classes = readClasses()
         self.colors_class_dict = readColors()
         self.initPosClick()
         self.initUI()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Q:
-            if self.vido_loader is not None:
-                self.annotator.save_all()
-            self.deleteLater()
+            self.save_and_exit()
         elif event.key() == QtCore.Qt.Key_N:
-            if self.vido_loader is not None:
-                self.current_img = self.get_next_img()
-                if self.current_img is not None:
-                    self.load_pix_from_buff()
-                    self.annotator.save_current()
-                    self.annotator.current_frame += 1
-                else:
-                    print("saving....")
-                    self.annotator.save_all()
-                    self.reset_video()
+            self.next_frame_view()
         elif event.key() == QtCore.Qt.Key_Backslash:
-            if self.vido_loader is not None and len(self.annotator.frame_objs) > 0:
-                keys = list(self.annotator.frame_objs)
-                if self.bbox_selected is None:
-                    self.bbox_selected = 0
-                else:
-                    self.bbox_selected += 1
-                    if self.bbox_selected >= keys.__len__():
-                        self.bbox_selected = 0
-                self.drawBoxbyClass(tobg=True)
+            self.next_annotation()
         elif event.key() == QtCore.Qt.Key_Escape:
-            self.bbox_selected = None
-            self.drawBoxbyClass()
+            self.deselect_annotation()
         elif event.key() == QtCore.Qt.Key_X:
-            if self.vido_loader is not None and len(self.annotator.frame_objs) > 0 and self.bbox_selected is not None:
-                k = list(self.annotator.frame_objs)[self.bbox_selected]
-                self.annotator.frame_objs.pop(k)
-                self.bbox_selected = None
-                self.load_pix_from_buff()
-                self.drawBoxbyClass()
+            self.delete_annotation()
 
         event.accept()
+
+    def delete_annotation(self):
+        if self.vido_loader is not None and len(self.annotator.frame_objs) > 0 and self.bbox_selected is not None:
+            k = list(self.annotator.frame_objs)[self.bbox_selected]
+            self.annotator.frame_objs.pop(k)
+            self.bbox_selected = None
+            self.load_pix_from_buff()
+            self.drawBoxbyClass()
+
+    def deselect_annotation(self):
+        if self.vido_loader is not None and len(self.annotator.frame_objs) > 0:
+            self.bbox_selected = None
+            self.drawBoxbyClass()
+
+    def next_annotation(self):
+        if self.vido_loader is not None and len(self.annotator.frame_objs) > 0:
+            keys = list(self.annotator.frame_objs)
+            if self.bbox_selected is None:
+                self.bbox_selected = 0
+            else:
+                self.bbox_selected += 1
+                if self.bbox_selected >= keys.__len__():
+                    self.bbox_selected = 0
+            self.drawBoxbyClass(tobg=True)
+
+    def save_and_exit(self):
+        if self.vido_loader is not None:
+            self.annotator.save_all()
+        self.deleteLater()
+
+    def next_frame_view(self):
+        if self.vido_loader is not None:
+            self.current_img = self.get_next_img()
+            if self.current_img is not None:
+                self.load_pix_from_buff()
+                self.annotator.save_current()
+                self.annotator.current_frame += 1
+            else:
+                print("saving....")
+                self.annotator.save_all()
+                self.reset_video()
 
     def reset_video(self):
         self.current_img = np.zeros((800, 1280, 3), dtype=np.uint8)
@@ -101,7 +117,7 @@ class App(QWidget):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         video_file, _ = QFileDialog.getOpenFileName(self, "Selezionare un file video", "",
-                                                    "MP4 video files (*.mp4);;AVI video files (*.avi)", options=options)
+                                                    "AVI video files (*.avi);;MP4 video files (*.mp4)", options=options)
         if video_file is not "":
             self.vido_loader = VideoLoader(video_file)
             self.annotator = Annotator(self.vido_loader.tot_frames,
@@ -181,13 +197,18 @@ class App(QWidget):
         for rdi_i, rdi in enumerate(self.radioclass_List):
             rdi.setVisible(val)
             r,g,b = hls2rgb(self.colors_class_dict[rdi_i])
-            rdi.setStyleSheet(f'color: {QColor(r,g,b).name()}')
+            # rdi.setStyleSheet('font: 14pt Arial')
+            # rdi.update()
+            # rdi.setStyleSheet(f'color: {QColor(r,g,b).name()}')
+            # rdi.update()
+            rdi.setStyleSheet('QRadioButton{font: 12pt Comic Sans MS; color:'+f'{QColor(r,g,b).name()}'';} QRadioButton::indicator { width: 12px; height: 30px;};')
             rdi.update()
 
     def initUI(self):
         self.title = 'Magico Annotatore Ferroviario'
         self.left = 10
         self.top = 10
+        self.width = 1600
         self.width = 1600
         self.height = 900
 
@@ -200,10 +221,41 @@ class App(QWidget):
         self.loadButton.setMaximumWidth(200)
         self.loadButton.clicked.connect(self.openFileNameDialog)
 
+        self.nextButton = QPushButton()
+        self.nextButton.setText("N --> ")
+        self.nextButton.setToolTip('Vai al prossimo fotogramma')
+        self.nextButton.setMaximumWidth(45)
+        self.nextButton.clicked.connect(self.next_frame_view)
+
+        self.nextAnnButton = QPushButton()
+        self.nextAnnButton.setText("\\")
+        self.nextAnnButton.setToolTip('Scorri Annotazioni')
+        self.nextAnnButton.setMaximumWidth(45)
+        self.nextAnnButton.clicked.connect(self.next_annotation)
+
+        self.deleteAnnButton = QPushButton()
+        self.deleteAnnButton.setText("X")
+        self.deleteAnnButton.setToolTip('Elimina Annotazione selezionata')
+        self.deleteAnnButton.setMaximumWidth(45)
+        self.deleteAnnButton.clicked.connect(self.delete_annotation)
+
+        self.deselectAnnButton = QPushButton()
+        self.deselectAnnButton.setText("ESC")
+        self.deselectAnnButton.setToolTip('Deseleziona Annotazioni')
+        self.deselectAnnButton.setMaximumWidth(45)
+        self.deselectAnnButton.clicked.connect(self.deselect_annotation)
+
+        self.exitButton = QPushButton()
+        self.exitButton.setText("Salva ed Esci")
+        self.exitButton.setToolTip('Salva ed Esci')
+        self.exitButton.setMaximumWidth(200)
+        self.exitButton.clicked.connect(self.save_and_exit)
+
         # instructions label
         self.instrLabel = QLabel()
         self.instrLabel.move(1350, 120)
-        self.instrLabel.setStyleSheet('color: red')
+        self.instrLabel.setStyleSheet('color: black')
+        self.instrLabel.setStyleSheet("font: 12pt Comic Sans MS")
         self.instrLabel.setText("Istruzioni:\n "
                                 "1: premere 'carica video'\n"
                                 "per aprire un video ed aspettare\n"
@@ -233,23 +285,40 @@ class App(QWidget):
 
         # classes
         self.radioclass_List = []
-        for rdi in range(self.n_classes):
-            self.radioclass_List.append(QRadioButton(f"Classe {rdi}"))
+        for cl in self.classes:
+            self.radioclass_List.append(QRadioButton(f"{cl}"))
         self.radioclass_List[0].setChecked(True)
 
         # layouts to put all together
         self.l_vlay0 = QVBoxLayout(self)
         self.r_vlay0 = QVBoxLayout(self)
+        self.r_hlay0 = QHBoxLayout(self)
+        self.r_hlay1 = QHBoxLayout(self)
+        self.r_hlay2 = QHBoxLayout(self)
+        self.r_hlay3 = QHBoxLayout(self)
+
+        self.r_hlay0.addWidget(self.instrLabel)
+        self.r_hlay1.addWidget(self.loadButton)
+        self.r_hlay2.addWidget(self.nextButton)
+        self.r_hlay2.addWidget(self.nextAnnButton)
+        self.r_hlay2.addWidget(self.deleteAnnButton)
+        self.r_hlay2.addWidget(self.deselectAnnButton)
+        self.r_hlay3.addWidget(self.exitButton)
+        self.r_vlay0.addLayout(self.r_hlay0)
+        self.r_vlay0.addSpacing(100)
+        self.r_vlay0.addLayout(self.r_hlay1)
+        self.r_vlay0.addLayout(self.r_hlay2)
+        self.r_vlay0.addLayout(self.r_hlay3)
+
         self.l_vlay0.addWidget(self.label)
         self.l_vlay0.addWidget(self.pbar)
-        self.r_vlay0.addWidget(self.instrLabel)
-        self.r_vlay0.addWidget(self.loadButton)
-        self.r_vlay0.addSpacing(30)
+
+
         self.class_group_label = QLabel("Classi:")
         self.r_vlay0.addWidget(self.class_group_label)
         for rdi in self.radioclass_List:
             self.r_vlay0.addWidget(rdi)
-        self.setCLassGroupVisibility(False)
+        # self.setCLassGroupVisibility(False)
 
         self.r_vlay0.setAlignment(QtCore.Qt.AlignTop)
 
