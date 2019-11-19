@@ -14,7 +14,11 @@ def letterbox(img, new_shape=1280, color=(0, 0, 0), mode='auto'):
         ratio = float(new_shape) / max(shape)
     else:
         ratio = max(new_shape) / max(shape)  # ratio  = new / old
-    new_unpad = (int(round(shape[1] * ratio)), int(round(shape[0] * ratio)))
+
+    if not ratio > 1.0:
+        new_unpad = (int(round(shape[1] * ratio)), int(round(shape[0] * ratio)))
+    else:
+        new_unpad = shape[1], shape[0]
 
     # Compute padding https://github.com/ultralytics/yolov3/issues/232
     if mode is 'auto':  # minimum rectangle
@@ -29,8 +33,15 @@ def letterbox(img, new_shape=1280, color=(0, 0, 0), mode='auto'):
 
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-    img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)  # resized, no border
-    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # padded square
+
+    if not ratio > 1.0:
+        img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)  # resized, no border
+        img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # padded square
+    else:
+        b = np.zeros((800, 1280, 3), dtype=np.uint8)
+        b[top:800-bottom, left:1280-right] = img
+        img = b
+
     meta = {'img1_shape': img.shape[:2], 'img0_shape': shape, 'dw': dw, 'dh': dh}
     return img, meta
 
@@ -40,13 +51,17 @@ def scale_coords(coords, meta):
     img0_shape, img1_shape = meta["img0_shape"], meta["img1_shape"]
     gain = (max(img1_shape) / max(img0_shape))  # gain  = old / new
     coords[0] -= meta["dw"]  # x padding
-    coords[0] /= gain
+    if gain < 1.0:
+        coords[0] /= gain
     coords[2] -= meta["dw"]  # x padding
-    coords[2] /= gain
+    if gain < 1.0:
+        coords[2] /= gain
     coords[1] -= meta["dh"]  # y padding
-    coords[1] /= gain
+    if gain < 1.0:
+        coords[1] /= gain
     coords[3] -= meta["dh"]  # y padding
-    coords[3] /= gain
+    if gain < 1.0:
+        coords[3] /= gain
     coords[0] = int(coords[0])
     coords[2] = int(coords[2])
     coords[1] = int(coords[1])
@@ -58,13 +73,17 @@ def re_scale_coords(coords, meta):
     # coords sono x1,y1,x2,y2
     img0_shape, img1_shape = meta["img0_shape"], meta["img1_shape"]
     gain = (max(img1_shape) / max(img0_shape))  # gain  = old / new
-    coords[0] *= gain
+    if gain < 1.0:
+        coords[0] *= gain
     coords[0] += meta["dw"]  # x padding
-    coords[2] *= gain
+    if gain < 1.0:
+        coords[2] *= gain
     coords[2] += meta["dw"]  # x padding
-    coords[1] *= gain
+    if gain < 1.0:
+        coords[1] *= gain
     coords[1] += meta["dh"]  # y padding
-    coords[3] *= gain
+    if gain < 1.0:
+        coords[3] *= gain
     coords[3] += meta["dh"]  # y padding
     coords[0] = int(coords[0])
     coords[2] = int(coords[2])
