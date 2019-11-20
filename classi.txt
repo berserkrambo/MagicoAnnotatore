@@ -5,3 +5,6 @@ Segnaletica
 Illuminatore
 Isolatore TE
 Ganasce da Saldatura
+Boa
+Oliatore
+Persona
