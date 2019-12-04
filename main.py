@@ -311,7 +311,7 @@ class App(QWidget):
         self.r_hlay2.addWidget(self.deselectAnnButton)
         self.r_hlay3.addWidget(self.exitButton)
         self.r_vlay0.addLayout(self.r_hlay0)
-        self.r_vlay0.addSpacing(70)
+        self.r_vlay0.addSpacing(10)
         self.r_vlay0.addLayout(self.r_hlay1)
         self.r_vlay0.addLayout(self.r_hlay2)
         self.r_vlay0.addLayout(self.r_hlay3)

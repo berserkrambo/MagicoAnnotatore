@@ -1,10 +1,13 @@
-Bombola GPL
-Mazza
-Tanica
-Segnaletica
-Illuminatore
 Isolatore TE
-Ganasce da Saldatura
+Tanica
+Segnale riflettente
+Mazza
+Piccone
+Fermascambio di sicurezza
+Binda
+Semaforo luminoso
+Fioretto
+Bombola GPL
 Boa
 Oliatore
 Persona
