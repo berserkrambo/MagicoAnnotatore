@@ -72,7 +72,6 @@ class App(QWidget):
             if self.current_img is not None:
                 self.load_pix_from_buff()
                 self.annotator.save_current()
-                self.annotator.current_frame += 1
             else:
                 print("saving....")
                 self.annotator.save_all()
