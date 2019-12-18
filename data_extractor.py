@@ -73,24 +73,29 @@ def divider(path):
 def extract_all_npz(video_path):
     video_path = Path(video_path)
     dirs = video_path.dirs()
-    dirs = [d for d in dirs if d.find("black") < 0 and d.find("done") < 0 and d.find("train") < 0 and d.find("test") < 0]
+    dirs = [d for d in dirs if
+            d.find("black") < 0 and d.find("done") < 0 and d.find("train") < 0 and d.find("test") < 0]
     train_dir = video_path / "train"
     train_dir.makedirs_p()
     test_dir = video_path / "test"
     test_dir.makedirs_p()
 
     for d in dirs:
-        an = [f for f in d.files("*.npz") if f.find("anomaly") >= 0][0]
-        no = [f for f in d.files("*.npz") if f.find("normal") >= 0][0]
+        an = [f for f in d.files("*.npz") if f.find("anomaly") >= 0]
+        no = [f for f in d.files("*.npz") if f.find("normal") >= 0]
 
-        imgs = np.load(an, mmap_mode='r')['data']
-        for idx, img in enumerate(imgs):
-            cv2.imwrite(test_dir/f'{d.name}_anomaly_{idx:05d}.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+        an = an[0] if len(an) > 0 else None
+        no = no[0] if len(no) > 0 else None
 
-        imgs = np.load(no, mmap_mode='r')['data']
-        for idx, img in enumerate(imgs):
-            cv2.imwrite(train_dir/f'{d.name}_normal_{idx:05d}.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+        if an is not None:
+            imgs = np.load(an, mmap_mode='r')['data']
+            for idx, img in enumerate(imgs):
+                cv2.imwrite(test_dir / f'{d.name}_anomaly_{idx:05d}.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
 
+        if no is not None:
+            imgs = np.load(no, mmap_mode='r')['data']
+            for idx, img in enumerate(imgs):
+                cv2.imwrite(train_dir / f'{d.name}_normal_{idx:05d}.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
 
 
 @click.command()
