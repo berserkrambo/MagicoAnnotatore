@@ -56,8 +56,8 @@ def divider(path):
     cv2.destroyAllWindows()
     print("writing frames")
 
-    ima = [ii for ii in anomaly_list if ii == 1]
-    imn = [ii for ii in anomaly_list if ii == 0]
+    ima = [iid for iid,  ii in enumerate(anomaly_list) if ii == 1]
+    imn = [iid for iid, ii in enumerate(anomaly_list) if ii == 0]
 
     if len(imn) > 0:
         np.savez_compressed(normal_path, data=np.take(imgs, imn, axis=0))
