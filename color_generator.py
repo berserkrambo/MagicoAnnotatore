@@ -4,8 +4,8 @@ c = (0,100,50)
 cc = {}
 cc[c] = 0
 
-with open("colors_hsl.yaml", 'w') as f:
-    for i in range(1, 20):
+with open("colors_hsl_track.yaml", 'w') as f:
+    for i in range(1, 359):
         while c in cc:
             h = int(np.random.randint(0, 359, 1))
             c = (h,100,50)
